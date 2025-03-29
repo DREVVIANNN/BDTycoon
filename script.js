@@ -433,9 +433,9 @@ function checkMaintenance() {
         if (doc.exists && doc.data().maintenance) {
             // Hide the game and show maintenance message
             document.body.innerHTML = `
-                <h1>⚡ Server Under Maintenance ⚡</h1>
-                <p>The game is currently undergoing maintenance. Please check back later.</p>
-                <button onclick="playMaintenanceSong()">Play Maintenance Song</button>
+                <h2>🚧 Server Under Maintenance 🚧</h2>
+                <p>The game is currently undergoing maintenance. Please refresh the website again later.</p>
+                <p>~ BitDTycoon Team.<i class="ri-verified-badge-fill"></i></p>
             `;
         } else {
             // Reload the normal game UI
@@ -454,8 +454,8 @@ function startMaintenance() {
     document.body.innerHTML = `
         <div style="text-align:center; font-size:15px; margin-top:50px;">
             <h2>🚧 Server Under Maintenance 🚧</h2>
-            <p>The game is currently undergoing maintenance. Please refresh the website again later.</p>
-            <p>~ BitDTycoon Team.<i class="ri-verified-badge-fill"></i></p>
+            <p>The server is currently undergoing maintenance. Please refresh the website again later.</p>
+            <p>~ BDTycoon Team.<i class="ri-verified-badge-fill"></i></p>
         </div>
     `;
 
@@ -598,11 +598,7 @@ firebase.auth().onAuthStateChanged(user => {
 });
 
 // List of verified users
-// List of verified users
-const verifiedUsers = [
-    "fazrelmsyamil@gmail.com",
-    "sigmaboys968573@gmail.com"
-];
+const verifiedUsers = ["fazrelmsyamil@gmail.com", "sigmaboys968573@gmail.com"];
 
 // Function to create a chat message
 function createMessage(email, username, message) {
@@ -654,29 +650,3 @@ function checkAuthState(user) {
 firebase.auth().onAuthStateChanged((user) => {
     checkAuthState(user);
 });
-
-// Function to render messages
-function renderMessage(messageData) {
-    const chatBox = document.getElementById("messages");
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message");
-
-    // Extract user info
-    const userEmail = messageData.email;
-    const isVerified = verifiedUsers.includes(userEmail);
-
-    // Create user display name with verification badge if applicable
-    const userName = `<span class="username">${messageData.username}</span>`;
-    const verifiedBadge = isVerified ? `<span id="verified-badge"><i class="ri-verified-badge-fill"></i></span>` : "";
-
-    // Construct message bubble
-    messageElement.innerHTML = `
-        <div class="message-header">
-            <img src="${messageData.profilePic}" class="avatar">
-            ${userName} ${verifiedBadge}
-        </div>
-        <div class="message-content">${messageData.text}</div>
-    `;
-
-    chatBox.appendChild(messageElement);
-}
