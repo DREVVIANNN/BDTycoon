@@ -546,24 +546,6 @@ function loadMessages() {
     });
 }
 
-const userEmail = firebase.auth().currentUser.email;
-
-// Check if the user is a verified developer
-const isVerified = ["fazrelmsyamil@gmail.com", "sigmaboys968573@gmail.com"].includes(userEmail);
-
-// Message object
-const messageData = {
-    text: messageInput.value,
-    username: currentUser.displayName,
-    email: userEmail,
-    profilePic: currentUser.photoURL,
-    verified: isVerified,  // Automatically mark as verified for devs
-    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-};
-
-// Send to Firestore
-firebase.firestore().collection("messages").add(messageData);
-
 // Send message to Firestore
 function sendMessage() {
     const user = firebase.auth().currentUser;
