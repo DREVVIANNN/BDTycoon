@@ -426,7 +426,19 @@ textarea {
 }
 
 
-@media (max-width: 768px) {
+@media screen and (max-width: 365px) {
+    .container{
+        width: 300px;
+    }
+    #chat-box{
+        width: 250px;
+    }
+    #message-input{
+        width: 170px;
+    }
+}
+
+@media (width: 768px) {
     .container{
         width: 400px;
         justify-self: center;
