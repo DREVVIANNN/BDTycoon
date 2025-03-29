@@ -562,7 +562,7 @@ const messageData = {
 };
 
 // Send to Firestore
-firebase.firestore().collection("global_chat").add(messageData);
+firebase.firestore().collection("messages").add(messageData);
 
 // Send message to Firestore
 function sendMessage() {
