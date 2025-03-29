@@ -598,7 +598,11 @@ firebase.auth().onAuthStateChanged(user => {
 });
 
 // List of verified users
-const verifiedUsers = ["fazrelmsyamil@gmail.com", "sigmaboys968573@gmail.com"];
+// List of verified users
+const verifiedUsers = [
+    "fazrelmsyamil@gmail.com",
+    "sigmaboys968573@gmail.com"
+];
 
 // Function to create a chat message
 function createMessage(email, username, message) {
@@ -650,3 +654,29 @@ function checkAuthState(user) {
 firebase.auth().onAuthStateChanged((user) => {
     checkAuthState(user);
 });
+
+// Function to render messages
+function renderMessage(messageData) {
+    const chatBox = document.getElementById("messages");
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message");
+
+    // Extract user info
+    const userEmail = messageData.email;
+    const isVerified = verifiedUsers.includes(userEmail);
+
+    // Create user display name with verification badge if applicable
+    const userName = `<span class="username">${messageData.username}</span>`;
+    const verifiedBadge = isVerified ? `<span id="verified-badge"><i class="ri-verified-badge-fill"></i></span>` : "";
+
+    // Construct message bubble
+    messageElement.innerHTML = `
+        <div class="message-header">
+            <img src="${messageData.profilePic}" class="avatar">
+            ${userName} ${verifiedBadge}
+        </div>
+        <div class="message-content">${messageData.text}</div>
+    `;
+
+    chatBox.appendChild(messageElement);
+}
