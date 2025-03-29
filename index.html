@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BitDTycoon Inc</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="shortcut icon" href="iowa.png" type="image/x-icon">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 offset md-4">
+                <nav>
+                    <h2><img width="10px" src="bitdrevv.png" alt="BitDrevv Icon"> BDTycoon</h2>
+                    <div id="user-info">
+                        <img id="user-photo" src="" alt="Profile" width="40" height="40">
+                        <span id="username"></span>
+                        <span id="verified-badge" style="color: goldenrod; font-weight: bold; display: none;"><i class="ri-verified-badge-fill"></i></span>
+                        <button title="Log-Out" class="log-out" id="logout-btn">
+                            <i class="ri-logout-box-r-line"></i>
+                        </button>
+                    </div>
+                    <button class="login" id="login-google">
+                        <i title="Login With Google" class="ri-google-fill"></i>
+                    </button>
+                </nav>
+                
+                <div id="game-container">
+                    <h1>Start Mining</h1>
+                    <p> <b>BTD: </b> <span id="bitdrevv">0</span><i class="ri-btc-fill"></i></p>
+                    <button id="mine-btn">Mine BitDrevv</button>
+                </div>
+
+                <div id="game-container">
+                    <h1>Upgrade Mining</h1>
+                    <button id="upgrade-btn">Upgrade Cost: <span id="upgrade-cost">10</span> BTD</button>
+                </div>
+
+                <div id="email-container">
+                    <h2 class="email-title">Annoncement 📢</h2>
+                    <ul id="email-list"></ul>
+                    
+
+                     <!-- Only show this if the logged-in user is the developer -->
+                <div id="send-email-container" style="display: none;">
+                    <textarea id="email-message" placeholder="Enter message"></textarea>
+                    <button class="send-button" onclick="sendEmail()"><i class="ri-send-plane-fill"></i></button>
+                </div>
+            </div>
+
+                <div id="chat-container">
+                    <h2>Global Chat <i class="ri-earth-fill"></i></h2>
+                    <div id="chat-box"></div> <!-- Messages will appear here -->
+                    <input type="text" id="message-input" placeholder="Type a message..." disabled>
+                    <button class="send-btn" id="send-button" onclick="sendMessage()" disabled><i class="ri-send-plane-fill"></i></button>
+                    <p id="login-message">⚠️ You need to log in to send messages.</p>
+                </div>
+
+                <div id="game-container">
+                    <h1 class="info">Info</h1>
+                        <p>🚀 How to Play <br>
+                        1️⃣ Sign in with Google to save your progress. <br>
+                        2️⃣ Start mining with a basic rig and earn BTD. <br>
+                        3️⃣ Upgrade your hardware to increase mining efficiency. <br>
+                        4️⃣ Go to shop and buy an items that can boost your mining! <br>
+                        5️⃣ Compete in leaderboards and become the top miner! <br></p>
+
+                        <p>
+                            Credits <br>
+                            Developer: DREVVIANN <br>
+                            Designer: - <br>
+                            Idea: DREVVIANN, Muisena <br> <br>
+
+                            Version: 1.0.1
+                        </p>
+                </div>
+
+                <div id="leaderboard-container">
+                    <h2>Leaderboard <i class="ri-vip-crown-fill"></i></h2>
+                    <ul id="leaderboard-list"></ul>
+                    <p class="leaderboard-refresh">Automatically refresh after 7 days.</p>
+                </div>
+
+            <p class="copy">&#169; 2025 BDTycoon. All rights reserved.</p>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+
+    <script src="script.js"></script>
+</body>
+</html>
