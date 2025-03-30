@@ -425,16 +425,96 @@ textarea {
     display: none; /* Hidden by default */
 }
 
+/* User Profile */
+#user-profile {
+    margin: 20px auto;
+    width: 415px;
+    padding: 15px;
+    background: #222;
+    border-radius: 10px;
+  }
+  #exp-bar-container {
+    width: 100%;
+    background: #444;
+    border-radius: 5px;
+    height: 20px;
+    margin-top: 10px;
+    position: relative;
+  }
+  #exp-bar {
+    width: 0%;
+    height: 100%;
+    background: #28a745;
+    border-radius: 5px;
+    transition: width 0.5s;
+  }
+  #exp-text {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    line-height: 20px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  /* Quest Container */
+  #quest-container {
+    width: 90%;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #222;
+    border-radius: 10px;
+  }
+  .quest {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #444;
+  }
+  .quest p {
+    margin: 5px 0;
+  }
+  .quest button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .quest button.disabled {
+    background-color: #666;
+    color: #ccc;
+    cursor: not-allowed;
+  }
+  .quest button.enabled {
+    background-color: #28a745;
+    color: white;
+    cursor: pointer;
+  }
+
+  #upgrade-btn{
+    font-size: 12px;
+  }
 
 @media screen and (max-width: 365px) {
     .container{
-        width: 300px;
+        width: 270px;
     }
     #chat-box{
-        width: 250px;
+        width: 220px;
     }
     #message-input{
-        width: 170px;
+        width: 150px;
+    }
+    #quest-container{
+        width: 85%;
+    }
+    #exp-bar-container{
+        width: 245px;
+    }
+    #user-profile{
+        width: 242px;
     }
 }
 

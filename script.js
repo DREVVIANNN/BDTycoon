@@ -2,6 +2,8 @@
         let upgradeCost = 10;
         let miningPower = 1;
         let user = null;
+        let currentEXP = 0; 
+        let userLevel = 1; 
 
         document.getElementById("mine-btn").addEventListener("click", () => {
             bitdrevv += 1 * miningPower;
@@ -650,3 +652,138 @@ function checkAuthState(user) {
 firebase.auth().onAuthStateChanged((user) => {
     checkAuthState(user);
 });
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        setupQuests(user.uid);
+        updateUserProfile(user.uid);
+    }
+});
+
+// Define quests
+const quests = [
+    { id: "quest1", title: "Mine 5000 BitDrevv", target: 5000, rewardExp: 500, rewardBitDrevv: 1000 },
+    { id: "quest2", title: "Mine 10,000 BitDrevv", target: 10000, rewardExp: 1000, rewardBitDrevv: 1500 },
+    { id: "quest3", title: "Mine 50,000 BitDrevv", target: 50000, rewardExp: 2500, rewardBitDrevv: 5000 }
+];
+
+// Set up quests for a new user if they don't exist
+function setupQuests(userId) {
+    const userQuestsRef = db.collection("users").doc(userId).collection("quests");
+
+    quests.forEach(quest => {
+        userQuestsRef.doc(quest.id).get().then(doc => {
+            if (!doc.exists) {
+                userQuestsRef.doc(quest.id).set({
+                    title: quest.title,
+                    progress: 0,
+                    target: quest.target,
+                    rewardExp: quest.rewardExp,
+                    rewardBitDrevv: quest.rewardBitDrevv
+                });
+            }
+        });
+    });
+
+    loadQuests(userId);
+}
+
+// Load and display quests
+function loadQuests(userId) {
+    const questContainer = document.getElementById("quest-container");
+    questContainer.innerHTML = "";
+
+    db.collection("users").doc(userId).collection("quests").get().then(snapshot => {
+        snapshot.forEach(doc => {
+            let quest = doc.data();
+            let questId = doc.id;
+
+            let questDiv = document.createElement("div");
+            questDiv.classList.add("quest-item");
+
+            let questTitle = document.createElement("h3");
+            questTitle.textContent = quest.title;
+
+            let questProgress = document.createElement("p");
+            questProgress.textContent = `Progress: ${quest.progress} / ${quest.target}`;
+
+            let claimButton = document.createElement("button");
+            claimButton.textContent = "Claim Reward";
+            claimButton.classList.add("claim-button");
+
+            // Make button green if quest is complete, gray if not
+            if (quest.progress >= quest.target) {
+                claimButton.disabled = false;
+                claimButton.style.backgroundColor = "green";
+            } else {
+                claimButton.disabled = true;
+                claimButton.style.backgroundColor = "gray";
+            }
+
+            claimButton.addEventListener("click", () => claimReward(userId, questId, quest));
+
+            questDiv.appendChild(questTitle);
+            questDiv.appendChild(questProgress);
+            questDiv.appendChild(claimButton);
+            questContainer.appendChild(questDiv);
+        });
+    });
+}
+
+// Function to claim quest rewards
+function claimReward(userId, questId, quest) {
+    if (quest.progress < quest.target) return;
+
+    const userRef = db.collection("users").doc(userId);
+
+    userRef.get().then(userDoc => {
+        if (userDoc.exists) {
+            let userData = userDoc.data();
+            let newEXP = (userData.exp || 0) + quest.rewardExp;
+            let newBitDrevv = (userData.bitdrevv || 0) + quest.rewardBitDrevv;
+
+            userRef.update({
+                exp: newEXP,
+                bitdrevv: newBitDrevv
+            }).then(() => {
+                // Delete the completed quest
+                userRef.collection("quests").doc(questId).delete().then(() => {
+                    loadQuests(userId);
+                    updateUserProfile(userId);
+                });
+            });
+        }
+    });
+}
+
+// Function to update user profile (for EXP bar)
+function updateUserProfile(userId) {
+    const userRef = db.collection("users").doc(userId);
+
+    userRef.get().then(doc => {
+        if (doc.exists) {
+            let userData = doc.data();
+            document.getElementById("user-exp").textContent = `EXP: ${userData.exp || 0} / 1000`;
+
+            // Update progress bar
+            let expBar = document.getElementById("exp-bar");
+            expBar.style.width = ((userData.exp || 0) / 1000) * 100 + "%";
+        }
+    });
+}
+
+// Function to update mining progress
+function updateMiningProgress(userId, bitdrevv) {
+    const userQuestsRef = db.collection("users").doc(userId).collection("quests");
+
+    userQuestsRef.get().then(snapshot => {
+        snapshot.forEach(doc => {
+            let quest = doc.data();
+            let newProgress = Math.min(quest.progress + bitdrevv, quest.target);
+
+            userQuestsRef.doc(doc.id).update({ progress: newProgress }).then(() => {
+                loadQuests(userId);
+            });
+        });
+    });
+}
