@@ -38,33 +38,24 @@
                     <button id="upgrade-btn">Upgrade Cost: <span id="upgrade-cost">10</span> BTD</button>
                 </div>
 
-                <div id="user-profile">
-                    <h2>User Progress</h2>
-                    <p><strong>Level:</strong> <span id="user-level">1</span></p>
-                    <div id="exp-bar-container">
-                      <div id="exp-bar"></div>
-                      <div id="exp-text">0 / 1000 EXP</div>
+                <div id="exp-container">
+                    <p>EXP: <span id="exp-value">0</span></p>
+                    <div class="exp-bar">
+                        <div class="exp-fill" id="exp-fill"></div>
                     </div>
-                  </div>
+                </div>
+
+                <div id="level-container">
+                    <p>Level: <span id="level-value">1</span></p>
+                    <div class="level-bar">
+                        <div class="level-fill" id="level-fill"></div>
+                    </div>
+                </div>
 
                   <div id="quest-container">
                     <h2>Quests</h2>
-                    <div class="quest" data-quest="1">
-                      <p><strong>Quest 1:</strong> Mine 5000 BTD</p>
-                      <p>Reward: 500 EXP, 1000 BTD</p>
-                      <button id="quest1-btn" class="disabled" disabled>Claim Reward</button>
-                    </div>
-                    <div class="quest" data-quest="2">
-                      <p><strong>Quest 2:</strong> Mine 10000 BTD</p>
-                      <p>Reward: 1000 EXP, 1500 BTD</p>
-                      <button id="quest2-btn" class="disabled" disabled>Claim Reward</button>
-                    </div>
-                    <div class="quest" data-quest="3">
-                      <p><strong>Quest 3:</strong> Mine 50000 BTD</p>
-                      <p>Reward: 2500 EXP, 5000 BTD</p>
-                      <button id="quest3-btn" class="disabled" disabled>Claim Reward</button>
-                    </div>
-                  </div>
+                    <ul id="quest-list"></ul>
+                </div>
 
                 <div id="email-container">
                     <h2 class="email-title">Annoncement 📢</h2>

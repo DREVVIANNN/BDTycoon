@@ -458,40 +458,93 @@ textarea {
     font-weight: bold;
   }
 
-  /* Quest Container */
   #quest-container {
-    width: 90%;
-    max-width: 400px;
-    margin: 20px auto;
-    padding: 20px;
+    width: 425px;
+    padding: 10px;
     background: #222;
     border-radius: 10px;
-  }
-  .quest {
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #444;
-  }
-  .quest p {
-    margin: 5px 0;
-  }
-  .quest button {
-    padding: 8px 12px;
+    color: white;
+}
+
+.quest-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin-bottom: 5px;
+    background: #333;
+    border-radius: 5px;
+}
+
+.quest-button {
+    padding: 5px 10px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 14px;
-  }
-  .quest button.disabled {
-    background-color: #666;
-    color: #ccc;
+}
+
+.quest-button.disabled {
+    background: gray;
     cursor: not-allowed;
-  }
-  .quest button.enabled {
-    background-color: #28a745;
+}
+
+.quest-button.active {
+    background: green;
+}
+
+#exp-container {
+    text-align: center;
+    margin-top: 10px;
+    width: 425px;
+    padding: 10px;
+    background: #222;
+    border-radius: 10px;
     color: white;
-    cursor: pointer;
-  }
+}
+
+.exp-bar {
+    width: 100%;
+    height: 10px;
+    background-color: gray;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.exp-fill {
+    height: 100%;
+    width: 0%;
+    background-color: gold;
+    transition: width 0.5s;
+}
+
+
+#level-container {
+    text-align: center;
+    margin-top: 10px;
+    width: 425px;
+    padding: 10px;
+    background: #222;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.level-bar {
+    width: 100%;
+    height: 10px;
+    background-color: gray;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.level-fill {
+    height: 100%;
+    width: 0%;
+    background-color: green;
+    transition: width 0.5s;
+}
+
+
 
   #upgrade-btn{
     font-size: 12px;

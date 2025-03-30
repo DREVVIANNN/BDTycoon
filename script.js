@@ -653,204 +653,162 @@ firebase.auth().onAuthStateChanged((user) => {
     checkAuthState(user);
 });
 
-auth.onAuthStateChanged(user => {
-    if (user) {
-        setupQuests(user.uid);
-        updateUserProfile(user.uid);
-    } else {
-        // If no user is logged in, show quests but disable tracking
-        loadQuests("guest");
-    }
-});
+let userId;
 
-// Define quests
+// Track quest progress in real-time
+function loadQuests() {
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            userId = user.uid;
+            updateQuestUI();
+        }
+    });
+}
+
+// Define quest data
 const quests = [
-    { id: "quest1", title: "Mine 5000 BitDrevv", target: 5000, rewardExp: 500, bitdrevv: 1000 },
-    { id: "quest2", title: "Mine 10,000 BitDrevv", target: 10000, rewardExp: 1000, bitdrevv: 1500 },
-    { id: "quest3", title: "Mine 50,000 BitDrevv", target: 50000, rewardExp: 2500, bitdrevv: 5000 }
+    { id: "quest1", name: "Mine 5000 BitDrevv", target: 5000, rewardExp: 200, rewardBitDrevv: 1500 },
+    { id: "quest2", name: "Mine 10000 BitDrevv", target: 10000, rewardExp: 1000, rewardBitDrevv: 2500 },
+    { id: "quest3", name: "Mine 50000 BitDrevv", target: 50000, rewardExp: 2500, rewardBitDrevv: 5000 }
 ];
 
-// Set up quests for logged-in users
-function setupQuests(userId) {
-    const userQuestsRef = db.collection("users").doc(userId).collection("quests");
+// Update UI in real-time
+function updateQuestUI() {
+    db.collection("questProgress").doc(userId).onSnapshot(doc => {
+        const data = doc.exists ? doc.data() : {};
+        const questList = document.getElementById("quest-list");
+        questList.innerHTML = "";
 
-    userQuestsRef.get().then(snapshot => {
-        if (snapshot.empty) {
-            quests.forEach(quest => {
-                userQuestsRef.doc(quest.id).set({
-                    title: quest.title,
-                    progress: 0,
-                    target: quest.target,
-                    rewardExp: quest.rewardExp,
-                    bitdrevv: quest.bitdrevv
-                });
-            });
-        }
-        loadQuests(userId);
-    });
-}
+        quests.forEach(quest => {
+            const progress = data[quest.id] || 0;
+            const isCompleted = progress >= quest.target;
+            const li = document.createElement("li");
+            li.classList.add("quest-item");
 
-// Load and display quests
-function loadQuests(userId) {
-    const questContainer = document.getElementById("quest-container");
-    questContainer.innerHTML = "";
+            li.innerHTML = `
+                <span>${quest.name} (${progress}/${quest.target})</span>
+                <button class="quest-button ${isCompleted ? 'active' : 'disabled'}" 
+                        ${isCompleted ? '' : 'disabled'}
+                        onclick="claimReward('${quest.id}', ${quest.rewardExp}, ${quest.rewardBitDrevv})">
+                    Claim
+                </button>
+            `;
 
-    let userQuestsRef = userId === "guest"
-        ? db.collection("globalQuests") // Guest users see static quests
-        : db.collection("users").doc(userId).collection("quests");
-
-    userQuestsRef.get().then(snapshot => {
-        snapshot.forEach(doc => {
-            let quest = doc.data();
-            let questId = doc.id;
-
-            let questDiv = document.createElement("div");
-            questDiv.classList.add("quest-item");
-
-            let questTitle = document.createElement("h3");
-            questTitle.textContent = quest.title;
-
-            let questProgress = document.createElement("p");
-            questProgress.textContent = `Progress: ${quest.progress || 0} / ${quest.target}`;
-
-            let claimButton = document.createElement("button");
-            claimButton.textContent = "Claim Reward";
-            claimButton.classList.add("claim-button");
-
-            if (userId === "guest") {
-                claimButton.disabled = true;
-                claimButton.style.backgroundColor = "gray";
-                claimButton.textContent = "Login to Claim";
-            } else {
-                if (quest.progress >= quest.target) {
-                    claimButton.disabled = false;
-                    claimButton.style.backgroundColor = "green";
-                } else {
-                    claimButton.disabled = true;
-                    claimButton.style.backgroundColor = "gray";
-                }
-
-                claimButton.addEventListener("click", () => claimReward(userId, questId, quest));
-            }
-
-            questDiv.appendChild(questTitle);
-            questDiv.appendChild(questProgress);
-            questDiv.appendChild(claimButton);
-            questContainer.appendChild(questDiv);
+            questList.appendChild(li);
         });
     });
 }
 
-// Function to claim quest rewards
-function claimReward(userId, questId, quest) {
-    if (quest.progress < quest.target) return;
-
+// Claim quest reward
+function claimReward(questId, rewardExp, rewardBitDrevv) {
     const userRef = db.collection("users").doc(userId);
+    const questRef = db.collection("questProgress").doc(userId);
 
-    userRef.get().then(userDoc => {
-        if (userDoc.exists) {
-            let userData = userDoc.data();
-            let newEXP = (userData.exp || 0) + quest.rewardExp;
-            let bitdrevv = (userData.bitdrevv || 0) + quest.bitdrevv;
+    db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        const questDoc = await transaction.get(questRef);
 
-            userRef.update({
-                exp: newEXP,
-                bitdrevv: bitdrevv
-            }).then(() => {
-                userRef.collection("quests").doc(questId).delete().then(() => {
-                    loadQuests(userId);
-                    updateUserProfile(userId);
-                });
+        if (!userDoc.exists || !questDoc.exists) return;
+
+        const userData = userDoc.data();
+        const questData = questDoc.data();
+
+        if (questData[questId] >= quests.find(q => q.id === questId).target) {
+            transaction.update(userRef, {
+                exp: (userData.exp || 0) + rewardExp,
+                bitdrevv: (userData.bitdrevv || 0) + rewardBitDrevv
             });
+
+            transaction.update(questRef, { [questId]: firebase.firestore.FieldValue.delete() });
         }
-    });
+    }).then(() => {
+        console.log("Reward claimed!");
+    }).catch(err => console.error("Error claiming reward:", err));
 }
 
-// Function to update user profile (for EXP bar)
-function updateUserProfile(userId) {
-    const userRef = db.collection("users").doc(userId);
+function updateQuestProgress(bitdrevvAmount) {
+    if (!userId) return;
 
-    userRef.get().then(doc => {
+    const questRef = db.collection("questProgress").doc(userId);
+
+    db.runTransaction(async (transaction) => {
+        const questDoc = await transaction.get(questRef);
+        let newData = questDoc.exists ? questDoc.data() : {};
+
+        // Loop through quests and update progress
+        quests.forEach(quest => {
+            if (!newData[quest.id]) {
+                newData[quest.id] = 0;
+            }
+            newData[quest.id] += bitdrevvAmount; // Add mined amount
+        });
+
+        transaction.set(questRef, newData, { merge: true });
+    }).then(() => {
+        console.log("Quest progress updated!");
+    }).catch(err => console.error("Error updating quest progress:", err));
+}
+
+const userRef = firebase.firestore().collection("users").doc(firebase.auth().currentUser.uid);
+
+
+function updateEXP() {
+    userRef.onSnapshot((doc) => {
         if (doc.exists) {
-            let userData = doc.data();
-            document.getElementById("user-exp").textContent = `EXP: ${userData.exp || 0} / 1000`;
+            let exp = doc.data().exp || 0;
+            document.getElementById("exp-value").innerText = exp;
 
-            // Update progress bar
-            let expBar = document.getElementById("exp-bar");
-            expBar.style.width = ((userData.exp || 0) / 1000) * 100 + "%";
+            // Set max EXP for visual scaling (change if needed)
+            let maxExp = 5000;
+            let expPercent = (exp / maxExp) * 100;
+
+            document.getElementById("exp-fill").style.width = expPercent + "%";
         }
     });
 }
 
-// Function to update mining progress
-function updateMiningProgress(userId, bitdrevv) {
-    if (!userId || userId === "guest") return; // Prevent guests from updating progress
+// Call function after user logs in
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) updateEXP();
+});
 
-    const userQuestsRef = db.collection("users").doc(userId).collection("quests");
+function updateLevel() {
+    userRef.onSnapshot((doc) => {
+        if (doc.exists) {
+            let exp = doc.data().exp || 0;
+            let level = doc.data().level || 1;
+            document.getElementById("level-value").innerText = level;
 
-    userQuestsRef.get().then(snapshot => {
-        snapshot.forEach(doc => {
-            let quest = doc.data();
-            let newProgress = Math.min((quest.progress || 0) + bitdrevv, quest.target);
+            // Define EXP required per level (example: 1000 per level)
+            let expForNextLevel = level * 1000;
+            let expPercent = (exp / expForNextLevel) * 100;
 
-            userQuestsRef.doc(doc.id).update({ progress: newProgress }).then(() => {
-                loadQuests(userId);
-            });
-        });
-    });
-}
+            document.getElementById("level-fill").style.width = expPercent + "%";
 
-function loadQuests(userId) {
-    const questContainer = document.getElementById("quest-container");
-    questContainer.innerHTML = "";
-
-    let userQuestsRef = userId === "guest"
-        ? db.collection("globalQuests") // Load public quests for guests
-        : db.collection("users").doc(userId).collection("quests"); // Load quests for logged-in users
-
-    userQuestsRef.get().then(snapshot => {
-        if (snapshot.empty) {
-            console.log("No quests available.");
-            return;
-        }
-
-        snapshot.forEach(doc => {
-            let quest = doc.data();
-            let questId = doc.id;
-
-            let questDiv = document.createElement("div");
-            questDiv.classList.add("quest-item");
-
-            let questTitle = document.createElement("h3");
-            questTitle.textContent = quest.title;
-
-            let questProgress = document.createElement("p");
-            questProgress.textContent = `Progress: ${quest.progress || 0} / ${quest.target}`;
-
-            let claimButton = document.createElement("button");
-            claimButton.textContent = "Claim Reward";
-            claimButton.classList.add("claim-button");
-
-            if (userId === "guest") {
-                claimButton.disabled = true;
-                claimButton.style.backgroundColor = "gray";
-                claimButton.textContent = "Login to Claim";
-            } else {
-                if (quest.progress >= quest.target) {
-                    claimButton.disabled = false;
-                    claimButton.style.backgroundColor = "green";
-                } else {
-                    claimButton.disabled = true;
-                    claimButton.style.backgroundColor = "gray";
-                }
-
-                claimButton.addEventListener("click", () => claimReward(userId, questId, quest));
+            // If user reaches required EXP, level up!
+            if (exp >= expForNextLevel) {
+                levelUp();
             }
-
-            questDiv.appendChild(questTitle);
-            questDiv.appendChild(questProgress);
-            questDiv.appendChild(claimButton);
-            questContainer.appendChild(questDiv);
-        });
+        }
     });
 }
+
+function levelUp() {
+    userRef.update({
+        level: firebase.firestore.FieldValue.increment(1),
+        exp: 0 // Reset EXP after leveling up
+    }).then(() => {
+        console.log("Level Up!");
+    }).catch((error) => {
+        console.error("Error leveling up:", error);
+    });
+}
+
+// Call function after user logs in
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) updateLevel();
+});
+
+
+loadQuestProgress();
+
