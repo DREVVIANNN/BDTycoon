@@ -667,26 +667,26 @@ function loadQuests() {
 
 // Define quest data
 const quests = [
-    { id: "quest1", name: "Mine 5000 BitDrevv", target: 5000, rewardExp: 200, rewardBitDrevv: 1500 },
-    { id: "quest2", name: "Mine 10000 BitDrevv", target: 10000, rewardExp: 1000, rewardBitDrevv: 2500 },
-    { id: "quest3", name: "Mine 50000 BitDrevv", target: 50000, rewardExp: 2500, rewardBitDrevv: 5000 }
+    { id: "quest1", title: "Mine 5000 BitDrevv", goal: 5000, rewardExp: 200, rewardBitDrevv: 1500 },
+    { id: "quest2", title: "Mine 10000 BitDrevv", goal: 10000, rewardExp: 1000, rewardBitDrevv: 2500 },
+    { id: "quest3", title: "Mine 50000 BitDrevv", goal: 50000, rewardExp: 2500, rewardBitDrevv: 5000 }
 ];
 
 // Update UI in real-time
 function updateQuestUI() {
-    db.collection("questProgress").doc(userId).onSnapshot(doc => {
+    db.collection("quests").doc(userId).onSnapshot(doc => {
         const data = doc.exists ? doc.data() : {};
         const questList = document.getElementById("quest-list");
         questList.innerHTML = "";
 
         quests.forEach(quest => {
             const progress = data[quest.id] || 0;
-            const isCompleted = progress >= quest.target;
+            const isCompleted = progress >= quest.goal;
             const li = document.createElement("li");
             li.classList.add("quest-item");
 
             li.innerHTML = `
-                <span>${quest.name} (${progress}/${quest.target})</span>
+                <span>${quest.title} (${progress}/${quest.goal})</span>
                 <button class="quest-button ${isCompleted ? 'active' : 'disabled'}" 
                         ${isCompleted ? '' : 'disabled'}
                         onclick="claimReward('${quest.id}', ${quest.rewardExp}, ${quest.rewardBitDrevv})">
@@ -702,7 +702,7 @@ function updateQuestUI() {
 // Claim quest reward
 function claimReward(questId, rewardExp, rewardBitDrevv) {
     const userRef = db.collection("users").doc(userId);
-    const questRef = db.collection("questProgress").doc(userId);
+    const questRef = db.collection("quests").doc(userId);
 
     db.runTransaction(async (transaction) => {
         const userDoc = await transaction.get(userRef);
@@ -726,10 +726,10 @@ function claimReward(questId, rewardExp, rewardBitDrevv) {
     }).catch(err => console.error("Error claiming reward:", err));
 }
 
-function updateQuestProgress(bitdrevvAmount) {
+function updateQuests(bitdrevvAmount) {
     if (!userId) return;
 
-    const questRef = db.collection("questProgress").doc(userId);
+    const questRef = db.collection("quests").doc(userId);
 
     db.runTransaction(async (transaction) => {
         const questDoc = await transaction.get(questRef);
@@ -809,6 +809,36 @@ firebase.auth().onAuthStateChanged((user) => {
     if (user) updateLevel();
 });
 
+db.collection("quests").get().then((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+        console.log(doc.id, " => ", doc.data()); // Debugging
+    });
+}).catch((error) => {
+    console.error("Error fetching quests: ", error);
+});
 
-loadQuestProgress();
+function displayQuests(quests) {
+    let questContainer = document.getElementById("quest-container");
+    questContainer.innerHTML = ""; // Clear old quests
+
+    quests.forEach((quest) => {
+        let questElement = document.createElement("div");
+        questElement.innerHTML = `<h3>${quest.title}</h3>
+                                 <p>Goal: ${quest.goal} BTD</p>
+                                 <button disabled>Claim</button>`;
+        questContainer.appendChild(questElement);
+    });
+}
+
+db.collection("quests").onSnapshot((snapshot) => {
+    let quests = [];
+    snapshot.forEach((doc) => {
+        quests.push(doc.data());
+    });
+    displayQuests(quests);
+});
+
+
+
+loadQuests();
 
