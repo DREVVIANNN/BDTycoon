@@ -657,35 +657,37 @@ auth.onAuthStateChanged(user => {
     if (user) {
         setupQuests(user.uid);
         updateUserProfile(user.uid);
+    } else {
+        // If no user is logged in, show quests but disable tracking
+        loadQuests("guest");
     }
 });
 
 // Define quests
 const quests = [
-    { id: "quest1", title: "Mine 5000 BitDrevv", target: 5000, rewardExp: 500, rewardBitDrevv: 1000 },
-    { id: "quest2", title: "Mine 10,000 BitDrevv", target: 10000, rewardExp: 1000, rewardBitDrevv: 1500 },
-    { id: "quest3", title: "Mine 50,000 BitDrevv", target: 50000, rewardExp: 2500, rewardBitDrevv: 5000 }
+    { id: "quest1", title: "Mine 5000 BitDrevv", target: 5000, rewardExp: 500, bitdrevv: 1000 },
+    { id: "quest2", title: "Mine 10,000 BitDrevv", target: 10000, rewardExp: 1000, bitdrevv: 1500 },
+    { id: "quest3", title: "Mine 50,000 BitDrevv", target: 50000, rewardExp: 2500, bitdrevv: 5000 }
 ];
 
-// Set up quests for a new user if they don't exist
+// Set up quests for logged-in users
 function setupQuests(userId) {
     const userQuestsRef = db.collection("users").doc(userId).collection("quests");
 
-    quests.forEach(quest => {
-        userQuestsRef.doc(quest.id).get().then(doc => {
-            if (!doc.exists) {
+    userQuestsRef.get().then(snapshot => {
+        if (snapshot.empty) {
+            quests.forEach(quest => {
                 userQuestsRef.doc(quest.id).set({
                     title: quest.title,
                     progress: 0,
                     target: quest.target,
                     rewardExp: quest.rewardExp,
-                    rewardBitDrevv: quest.rewardBitDrevv
+                    bitdrevv: quest.bitdrevv
                 });
-            }
-        });
+            });
+        }
+        loadQuests(userId);
     });
-
-    loadQuests(userId);
 }
 
 // Load and display quests
@@ -693,7 +695,11 @@ function loadQuests(userId) {
     const questContainer = document.getElementById("quest-container");
     questContainer.innerHTML = "";
 
-    db.collection("users").doc(userId).collection("quests").get().then(snapshot => {
+    let userQuestsRef = userId === "guest"
+        ? db.collection("globalQuests") // Guest users see static quests
+        : db.collection("users").doc(userId).collection("quests");
+
+    userQuestsRef.get().then(snapshot => {
         snapshot.forEach(doc => {
             let quest = doc.data();
             let questId = doc.id;
@@ -705,22 +711,27 @@ function loadQuests(userId) {
             questTitle.textContent = quest.title;
 
             let questProgress = document.createElement("p");
-            questProgress.textContent = `Progress: ${quest.progress} / ${quest.target}`;
+            questProgress.textContent = `Progress: ${quest.progress || 0} / ${quest.target}`;
 
             let claimButton = document.createElement("button");
             claimButton.textContent = "Claim Reward";
             claimButton.classList.add("claim-button");
 
-            // Make button green if quest is complete, gray if not
-            if (quest.progress >= quest.target) {
-                claimButton.disabled = false;
-                claimButton.style.backgroundColor = "green";
-            } else {
+            if (userId === "guest") {
                 claimButton.disabled = true;
                 claimButton.style.backgroundColor = "gray";
-            }
+                claimButton.textContent = "Login to Claim";
+            } else {
+                if (quest.progress >= quest.target) {
+                    claimButton.disabled = false;
+                    claimButton.style.backgroundColor = "green";
+                } else {
+                    claimButton.disabled = true;
+                    claimButton.style.backgroundColor = "gray";
+                }
 
-            claimButton.addEventListener("click", () => claimReward(userId, questId, quest));
+                claimButton.addEventListener("click", () => claimReward(userId, questId, quest));
+            }
 
             questDiv.appendChild(questTitle);
             questDiv.appendChild(questProgress);
@@ -740,13 +751,12 @@ function claimReward(userId, questId, quest) {
         if (userDoc.exists) {
             let userData = userDoc.data();
             let newEXP = (userData.exp || 0) + quest.rewardExp;
-            let newBitDrevv = (userData.bitdrevv || 0) + quest.rewardBitDrevv;
+            let bitdrevv = (userData.bitdrevv || 0) + quest.bitdrevv;
 
             userRef.update({
                 exp: newEXP,
-                bitdrevv: newBitDrevv
+                bitdrevv: bitdrevv
             }).then(() => {
-                // Delete the completed quest
                 userRef.collection("quests").doc(questId).delete().then(() => {
                     loadQuests(userId);
                     updateUserProfile(userId);
@@ -774,16 +784,73 @@ function updateUserProfile(userId) {
 
 // Function to update mining progress
 function updateMiningProgress(userId, bitdrevv) {
+    if (!userId || userId === "guest") return; // Prevent guests from updating progress
+
     const userQuestsRef = db.collection("users").doc(userId).collection("quests");
 
     userQuestsRef.get().then(snapshot => {
         snapshot.forEach(doc => {
             let quest = doc.data();
-            let newProgress = Math.min(quest.progress + bitdrevv, quest.target);
+            let newProgress = Math.min((quest.progress || 0) + bitdrevv, quest.target);
 
             userQuestsRef.doc(doc.id).update({ progress: newProgress }).then(() => {
                 loadQuests(userId);
             });
+        });
+    });
+}
+
+function loadQuests(userId) {
+    const questContainer = document.getElementById("quest-container");
+    questContainer.innerHTML = "";
+
+    let userQuestsRef = userId === "guest"
+        ? db.collection("globalQuests") // Load public quests for guests
+        : db.collection("users").doc(userId).collection("quests"); // Load quests for logged-in users
+
+    userQuestsRef.get().then(snapshot => {
+        if (snapshot.empty) {
+            console.log("No quests available.");
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            let quest = doc.data();
+            let questId = doc.id;
+
+            let questDiv = document.createElement("div");
+            questDiv.classList.add("quest-item");
+
+            let questTitle = document.createElement("h3");
+            questTitle.textContent = quest.title;
+
+            let questProgress = document.createElement("p");
+            questProgress.textContent = `Progress: ${quest.progress || 0} / ${quest.target}`;
+
+            let claimButton = document.createElement("button");
+            claimButton.textContent = "Claim Reward";
+            claimButton.classList.add("claim-button");
+
+            if (userId === "guest") {
+                claimButton.disabled = true;
+                claimButton.style.backgroundColor = "gray";
+                claimButton.textContent = "Login to Claim";
+            } else {
+                if (quest.progress >= quest.target) {
+                    claimButton.disabled = false;
+                    claimButton.style.backgroundColor = "green";
+                } else {
+                    claimButton.disabled = true;
+                    claimButton.style.backgroundColor = "gray";
+                }
+
+                claimButton.addEventListener("click", () => claimReward(userId, questId, quest));
+            }
+
+            questDiv.appendChild(questTitle);
+            questDiv.appendChild(questProgress);
+            questDiv.appendChild(claimButton);
+            questContainer.appendChild(questDiv);
         });
     });
 }
